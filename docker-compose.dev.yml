@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      target: dev
+    env_file:
+      - .env
+    image: slack-test-app:dev
+    ports: 
+      - "3000:3000"
