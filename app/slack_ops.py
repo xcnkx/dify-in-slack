@@ -1,15 +1,12 @@
-from typing import Optional
-from typing import List, Dict
+from typing import Dict, List, Optional
 
 import requests
-
-from slack_sdk.web import WebClient, SlackResponse
-from slack_sdk.errors import SlackApiError
 from slack_bolt import BoltContext
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import SlackResponse, WebClient
 
 from app.env import IMAGE_FILE_ACCESS_ENABLED
 from app.markdown_conversion import slack_to_markdown
-
 
 # ----------------------------
 # General operations in a channel

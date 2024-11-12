@@ -8,3 +8,14 @@ dependencies = [
     "dify-client>=0.1.10",
     "slack-bolt>=1.21.2",
 ]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.7.3",
+]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["I"]

@@ -1,6 +1,7 @@
+import logging
+
 from slack_bolt import Ack, BoltContext
 from slack_sdk import WebClient
-import logging
 
 from app.slack_ops import find_parent_message, is_this_app_mentioned
 

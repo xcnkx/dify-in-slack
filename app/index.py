@@ -3,7 +3,6 @@ import os
 from slack_bolt import App
 from slack_bolt.adapter.aws_lambda import SlackRequestHandler
 
-
 slack_app_token = slack_bot_token = os.environ["SLACK_APP_TOKEN"]
 slack_signing_token = os.environ["SLACK_SIGNING_SECRET"]
 
