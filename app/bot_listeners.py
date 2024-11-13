@@ -29,7 +29,7 @@ def respond_to_app_mention(
     try:
         client.chat_postMessage(
             channel=context.channel_id,
-            thread_ts=thread_ts,
+            thread_ts=payload.get("ts"),
             text="Hello there !",
         )
     except Exception as e:
