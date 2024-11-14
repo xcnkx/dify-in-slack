@@ -1,12 +1,11 @@
+import json
 from typing import Optional
 
 from dify_client import ChatClient
-
-from app.markdown_conversion import slack_to_markdown
-
+from requests import Response
 from sseclient import SSEClient
 
-from requests import Response
+from app.markdown_conversion import slack_to_markdown
 
 # ----------------------------
 # Internal functions
@@ -68,9 +67,10 @@ def get_answer_from_streaming_response(response: Response) -> str:
     answer = ""
 
     for event in client.events():
-        if event.event == "message":
-            answer += event.data["answer"]
-        elif event.event == "message_end":
+        data = json.loads(event.data)
+        if data["event"] == "message":
+            answer += data.get("answer", "")
+        elif data["event"] == "message_end":
             break
 
     return answer

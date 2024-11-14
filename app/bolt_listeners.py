@@ -43,7 +43,7 @@ def handle_response_error(
     client.chat_postMessage(
         channel=channel_id,
         thread_ts=thread_ts,
-        text=f"<@{user_id}>\nSorry, I failed to respond to your message. Please try again later.",
+        text=f"<@{user_id}>\n申し訳ありませんが、エラーが発生しました。後ほどお試しください。",
     )
 
 
