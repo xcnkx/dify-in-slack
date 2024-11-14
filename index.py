@@ -2,8 +2,9 @@ import os
 
 from slack_bolt import App
 from slack_bolt.adapter.aws_lambda import SlackRequestHandler
+from slack_bolt.context import BoltContext
 
-from app.bot_listeners import register_listeners
+from app.bolt_listeners import register_listeners
 
 slack_app_token = os.environ["SLACK_APP_TOKEN"]
 slack_bot_token = os.environ["SLACK_BOT_TOKEN"]
@@ -14,6 +15,12 @@ app = App(
     token=slack_bot_token,
     signing_secret=slack_signing_token,
 )
+
+
+@app.middleware
+def set_dify_api_key(context: BoltContext, next_):
+    context["DIFY_APP_API_KEY"] = os.environ["DIFY_APP_API_KEY"]
+    next_()
 
 
 def lambda_handler(event, context):

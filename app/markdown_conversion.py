@@ -29,12 +29,15 @@ def markdown_to_slack(content: str) -> str:
     # Split the input string into parts based on code blocks and inline code
     parts = re.split(r"(?s)(```.+?```|`[^`\n]+?`)", content)
 
-    # Apply the bold, italic, and strikethrough formatting to text not within code
+    # Apply the bold, italic, strikethrough, and heading formatting to text not within code
     result = ""
     for part in parts:
         if part.startswith("```") or part.startswith("`"):
             result += part
         else:
+            # Convert any heading level to bold
+            part = re.sub(r"^(#{1,6}) (.+)", r"**\2**", part, flags=re.MULTILINE)
+
             for o, n in [
                 (
                     r"\*\*\*(?!\s)([^\*\n]+?)(?<!\s)\*\*\*",
