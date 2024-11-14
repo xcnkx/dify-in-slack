@@ -7,8 +7,8 @@ from slack_sdk import WebClient
 
 from app.dify_ops import (
     format_dify_message_content,
-    get_last_conversation_id,
     get_answer_from_streaming_response,
+    get_last_conversation_id,
 )
 from app.env import TRANSLATE_MARKDOWN
 from app.markdown_conversion import markdown_to_slack, slack_to_markdown
