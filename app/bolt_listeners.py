@@ -5,7 +5,11 @@ from dify_client import ChatClient
 from slack_bolt import Ack, BoltContext
 from slack_sdk import WebClient
 
-from app.dify_ops import format_dify_message_content, get_last_conversation_id
+from app.dify_ops import (
+    format_dify_message_content,
+    get_last_conversation_id,
+    get_answer_from_streaming_response,
+)
 from app.env import TRANSLATE_MARKDOWN
 from app.markdown_conversion import markdown_to_slack, slack_to_markdown
 from app.slack_ops import find_parent_message, is_this_app_mentioned
@@ -76,6 +80,7 @@ def respond_to_app_mention(
                     query=user_message,
                     conversation_id=latest_conversation_id,
                     user=thread_ts.replace(".", "-"),
+                    response_mode="streaming",
                 )
             else:
                 messages_fmt = "\n".join(
@@ -86,16 +91,18 @@ def respond_to_app_mention(
                     inputs={"slack_user_id": user_id},
                     query=query,
                     user=thread_ts.replace(".", "-"),
+                    response_mode="streaming",
                 )
         else:
             response = dify_client.create_chat_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
                 user=payload.get("ts").replace(".", "-"),
+                response_mode="streaming",
             )
 
         response.raise_for_status()
-        reply_message = response.json()["answer"]
+        reply_message = get_answer_from_streaming_response(response)
         post_reply(
             client, context.channel_id, thread_ts or payload.get("ts"), reply_message
         )
@@ -131,6 +138,7 @@ def respond_to_new_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
                 user=payload.get("ts").replace(".", "-"),
+                response_mode="streaming",
             )
         else:
             messages_in_context = client.conversations_replies(
@@ -157,16 +165,18 @@ def respond_to_new_message(
                     query=user_message,
                     conversation_id=latest_conversation_id,
                     user=thread_ts.replace(".", "-"),
+                    response_mode="streaming",
                 )
             else:
                 response = dify_client.create_chat_message(
                     inputs={"slack_user_id": user_id},
                     query=user_message,
                     user=thread_ts.replace(".", "-"),
+                    response_mode="streaming",
                 )
 
         response.raise_for_status()
-        reply_message = response.json()["answer"]
+        reply_message = get_answer_from_streaming_response(response)
         post_reply(
             client, context.channel_id, thread_ts or payload.get("ts"), reply_message
         )
