@@ -31,6 +31,6 @@ def get_last_conversation_id(client: ChatClient, thread_ts: str) -> Optional[str
     res = client.get_conversations(thread_ts.replace(".", "-"))
     res.raise_for_status()
     conversation_history = res.json()
-    if conversation_history is None:
+    if len(conversation_history["data"]) == 0:
         return None
     return conversation_history["data"][-1]["id"]
