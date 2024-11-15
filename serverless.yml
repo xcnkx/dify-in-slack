@@ -1,0 +1,58 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: crissandbox
+# この名前は自由です
+service: aws-lambda-dify-slack-bolt
+
+provider:
+  name: aws
+  # 利用可能なバージョンは https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html を確認してください
+  runtime: python3.12
+  # リージョンは普段使うものに変更
+  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:InvokeAsync
+          Resource: "*"
+
+  environment:
+    SLACK_BOT_TOKEN: ${env:PROD_SLACK_BOT_TOKEN}
+    SLACK_SIGNING_SECRET: ${env:PROD_SLACK_SIGNING_SECRET}
+    SLACK_APP_TOKEN: ${env:PROD_SLACK_APP_TOKEN}
+    DIFY_APP_API_KEY: ${env:DIFY_APP_API_KEY}
+
+stages:
+  default:
+    resolvers:
+      aws-account:
+        type: aws
+        profile: serverless-servicename-agent
+        region: us-east-1
+        accessKeyId: ${env:AWS_ACCESS_KEY}
+        secretAccessKey: ${env:AWS_SECRET_ACCESS_KEY}
+
+# エンドポイント一覧を設定
+# OAuth フローを設定する場合は他に二つ追加します
+functions:
+  slack-bolt:
+    handler: index.lambda_handler
+    events:
+      - httpApi:
+          path: /slack/events
+          method: post
+    timeout: 60
+
+# アップロードに含めたくないファイルは ! はじまりで列挙します
+package:
+  patterns:
+    - "!.venv/**"
+    - "!node_modules/**"
+    - "!.idea/**"
+    - "!__pycache__/**"
+    - "!.ruff_cache/**"
+
+plugins:
+  - serverless-python-requirements
