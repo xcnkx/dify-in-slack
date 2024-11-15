@@ -14,3 +14,7 @@ build-dev:
 .PHONY: deploy-prod
 deploy-prod:
 	sls deploy --stage prod --verbose
+
+.PHONY: remove-prod
+remove-prod:
+	sls remove --stage prod --verbose
