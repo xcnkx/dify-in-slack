@@ -4,7 +4,7 @@ from slack_bolt import App
 from slack_bolt.adapter.aws_lambda import SlackRequestHandler
 from slack_bolt.context import BoltContext
 
-from app.bolt_listeners import register_listeners
+from app.bolt_listeners import before_authorize, register_listeners
 
 slack_app_token = os.environ["SLACK_APP_TOKEN"]
 slack_bot_token = os.environ["SLACK_BOT_TOKEN"]
@@ -13,6 +13,7 @@ slack_signing_token = os.environ["SLACK_SIGNING_SECRET"]
 app = App(
     process_before_response=True,
     token=slack_bot_token,
+    before_authorize=before_authorize,
     signing_secret=slack_signing_token,
 )
 
