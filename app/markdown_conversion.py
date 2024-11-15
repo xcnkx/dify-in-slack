@@ -26,6 +26,9 @@ def slack_to_markdown(content: str) -> str:
 # Conversion from OpenAI markdown to Slack mrkdwn
 # See also: https://api.slack.com/reference/surfaces/formatting#basics
 def markdown_to_slack(content: str) -> str:
+    # Replace ```language with ``` and keep the code block intact
+    content = re.sub(r"```[a-zA-Z0-9]+\n", "```\n", content)
+
     # Split the input string into parts based on code blocks and inline code
     parts = re.split(r"(?s)(```.+?```|`[^`\n]+?`)", content)
 

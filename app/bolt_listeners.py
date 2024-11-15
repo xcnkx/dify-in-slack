@@ -2,7 +2,8 @@ import logging
 import re
 
 from dify_client import ChatClient
-from slack_bolt import Ack, BoltContext
+from slack_bolt import Ack, BoltContext, BoltResponse
+from slack_bolt.request.payload_utils import is_event
 from slack_sdk import WebClient
 
 from app.dify_ops import (
@@ -11,8 +12,13 @@ from app.dify_ops import (
     get_last_conversation_id,
 )
 from app.env import TRANSLATE_MARKDOWN
-from app.markdown_conversion import markdown_to_slack, slack_to_markdown
-from app.slack_ops import find_parent_message, is_this_app_mentioned
+from app.markdown_conversion import slack_to_markdown
+from app.slack_ops import (
+    find_parent_message,
+    is_this_app_mentioned,
+    post_wip_message,
+    update_wip_message,
+)
 
 
 def just_ack(ack: Ack):
@@ -21,14 +27,6 @@ def just_ack(ack: Ack):
 
 def get_user_message(payload: dict, bot_user_id: str) -> str:
     return re.sub(f"<@{bot_user_id}>\\s*", "", payload["text"])
-
-
-def post_reply(client: WebClient, channel_id: str, thread_ts: str, text: str):
-    client.chat_postMessage(
-        channel=channel_id,
-        thread_ts=thread_ts,
-        text=markdown_to_slack(text),
-    )
 
 
 def handle_response_error(
@@ -66,6 +64,9 @@ def respond_to_app_mention(
         user_message = format_dify_message_content(user_message, TRANSLATE_MARKDOWN)
 
         if thread_ts:
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=thread_ts
+            )
             latest_conversation_id = get_last_conversation_id(dify_client, thread_ts)
             messages_history = client.conversations_replies(
                 channel=context.channel_id,
@@ -94,6 +95,9 @@ def respond_to_app_mention(
                     response_mode="streaming",
                 )
         else:
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=payload.get("ts")
+            )
             response = dify_client.create_chat_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
@@ -103,8 +107,8 @@ def respond_to_app_mention(
 
         response.raise_for_status()
         reply_message = get_answer_from_streaming_response(response)
-        post_reply(
-            client, context.channel_id, thread_ts or payload.get("ts"), reply_message
+        update_wip_message(
+            client, context.channel_id, wip_reply["message"]["ts"], reply_message
         )
 
     except Exception as e:
@@ -134,6 +138,9 @@ def respond_to_new_message(
         user_message = get_user_message(payload, context.bot_user_id)
 
         if is_in_dm_with_bot and not thread_ts:
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=payload.get("ts")
+            )
             response = dify_client.create_chat_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
@@ -141,6 +148,9 @@ def respond_to_new_message(
                 response_mode="streaming",
             )
         else:
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=thread_ts
+            )
             messages_in_context = client.conversations_replies(
                 channel=context.channel_id,
                 ts=thread_ts,
@@ -177,8 +187,8 @@ def respond_to_new_message(
 
         response.raise_for_status()
         reply_message = get_answer_from_streaming_response(response)
-        post_reply(
-            client, context.channel_id, thread_ts or payload.get("ts"), reply_message
+        update_wip_message(
+            client, context.channel_id, wip_reply["message"]["ts"], reply_message
         )
 
     except Exception as e:
@@ -190,3 +200,28 @@ def respond_to_new_message(
 def register_listeners(app):
     app.event("app_mention")(ack=just_ack, lazy=[respond_to_app_mention])
     app.event("message")(ack=just_ack, lazy=[respond_to_new_message])
+
+
+MESSAGE_SUBTYPES_TO_SKIP = ["message_changed", "message_deleted"]
+
+
+# To reduce unnecessary workload in this app,
+# this before_authorize function skips message changed/deleted events.
+# Especially, "message_changed" events can be triggered many times when the app rapidly updates its reply.
+def before_authorize(
+    body: dict,
+    payload: dict,
+    logger: logging.Logger,
+    next_,
+):
+    if (
+        is_event(body)
+        and payload.get("type") == "message"
+        and payload.get("subtype") in MESSAGE_SUBTYPES_TO_SKIP
+    ):
+        logger.debug(
+            "Skipped the following middleware and listeners "
+            f"for this message event (subtype: {payload.get('subtype')})"
+        )
+        return BoltResponse(status=200, body="")
+    next_()

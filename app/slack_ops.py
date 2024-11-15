@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Optional
 
 import requests
 from slack_bolt import BoltContext
@@ -6,7 +6,14 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk.web import SlackResponse, WebClient
 
 from app.env import IMAGE_FILE_ACCESS_ENABLED
-from app.markdown_conversion import slack_to_markdown
+from app.markdown_conversion import markdown_to_slack, slack_to_markdown
+
+# ----------------------------
+# Messages
+# ----------------------------
+
+DEFAULT_LOADING_TEXT = ":hourglass_flowing_sand: しばらくお待ちください..."
+
 
 # ----------------------------
 # General operations in a channel
@@ -71,19 +78,12 @@ def post_wip_message(
     client: WebClient,
     channel: str,
     thread_ts: str,
-    loading_text: str,
-    messages: List[Dict[str, str]],
-    user: str,
+    loading_text: str = DEFAULT_LOADING_TEXT,
 ) -> SlackResponse:
-    system_messages = [msg for msg in messages if msg["role"] == "system"]
     return client.chat_postMessage(
         channel=channel,
         thread_ts=thread_ts,
-        text=loading_text,
-        metadata={
-            "event_type": "chat-gpt-convo",
-            "event_payload": {"messages": system_messages, "user": user},
-        },
+        text=markdown_to_slack(loading_text),
     )
 
 
@@ -92,18 +92,11 @@ def update_wip_message(
     channel: str,
     ts: str,
     text: str,
-    messages: List[Dict[str, str]],
-    user: str,
 ) -> SlackResponse:
-    system_messages = [msg for msg in messages if msg["role"] == "system"]
     return client.chat_update(
         channel=channel,
         ts=ts,
-        text=text,
-        metadata={
-            "event_type": "chat-gpt-convo",
-            "event_payload": {"messages": system_messages, "user": user},
-        },
+        text=markdown_to_slack(text),
     )
 
 
