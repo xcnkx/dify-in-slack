@@ -1,5 +1,5 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: crissandbox
+org: ${env:SERVERLESS_ORG_NAME}
 # この名前は自由です
 service: aws-lambda-dify-slack-bolt
 
