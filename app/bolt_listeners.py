@@ -12,7 +12,7 @@ from app.dify_ops import (
     get_last_conversation_id,
 )
 from app.env import TRANSLATE_MARKDOWN
-from app.markdown_conversion import markdown_to_slack, slack_to_markdown
+from app.markdown_conversion import slack_to_markdown
 from app.slack_ops import (
     find_parent_message,
     is_this_app_mentioned,
@@ -27,14 +27,6 @@ def just_ack(ack: Ack):
 
 def get_user_message(payload: dict, bot_user_id: str) -> str:
     return re.sub(f"<@{bot_user_id}>\\s*", "", payload["text"])
-
-
-def post_reply(client: WebClient, channel_id: str, thread_ts: str, text: str):
-    client.chat_postMessage(
-        channel=channel_id,
-        thread_ts=thread_ts,
-        text=markdown_to_slack(text),
-    )
 
 
 def handle_response_error(

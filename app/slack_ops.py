@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Optional
 
 import requests
 from slack_bolt import BoltContext
@@ -6,7 +6,7 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk.web import SlackResponse, WebClient
 
 from app.env import IMAGE_FILE_ACCESS_ENABLED
-from app.markdown_conversion import slack_to_markdown
+from app.markdown_conversion import markdown_to_slack, slack_to_markdown
 
 # ----------------------------
 # Messages
@@ -83,7 +83,7 @@ def post_wip_message(
     return client.chat_postMessage(
         channel=channel,
         thread_ts=thread_ts,
-        text=loading_text,
+        text=markdown_to_slack(loading_text),
     )
 
 
@@ -96,7 +96,7 @@ def update_wip_message(
     return client.chat_update(
         channel=channel,
         ts=ts,
-        text=text,
+        text=markdown_to_slack(text),
     )
 
 
