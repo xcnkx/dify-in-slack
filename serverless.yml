@@ -58,5 +58,3 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: true
-    zip: true
-    layer: true
