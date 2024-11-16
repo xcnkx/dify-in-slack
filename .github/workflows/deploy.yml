@@ -39,7 +39,11 @@ jobs:
     - name: Extract API endpoint
       id: extract-endpoint
       run: |
-        ENDPOINT=$(echo "${{ steps.deploy.outputs.stdout }}" | grep -o 'https://[a-zA-Z0-9.-]*execute-api[a-zA-Z0-9.-]*\.amazonaws\.com/[a-zA-Z0-9.-]*')
+        ENDPOINT=$(grep -oP 'endpoint:\s+POST\s+-\s+\Khttps://[a-zA-Z0-9.-]*execute-api[a-zA-Z0-9.-]*\.amazonaws\.com/[a-zA-Z0-9.-]*' deployment_output.txt | head -n 1)
+        if [ -z "$ENDPOINT" ]; then
+          echo "No API endpoint found in deployment output." >&2
+          exit 1
+        fi
         echo "API_ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
     - name: Comment on PR
       uses: actions/github-script@v6
