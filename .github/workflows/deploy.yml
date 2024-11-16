@@ -6,7 +6,6 @@ on:
       - main
 jobs:
   deploy-prod:
-    environment: deploy app agent
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -17,6 +16,15 @@ jobs:
       run: npm install -g serverless
     - name: Serverless AWS authentication
       run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Create env file
+      run: |
+        cat > .env << EOF
+        ${{ secrets.PROD_SLACK_APP_TOKEN }}
+        ${{ secrets.PROD_SLACK_BOT_TOKEN }}
+        ${{ secrets.PROD_SLACK_SIGNING_SECRET }}
+        ${{ secrets.DIFY_APP_API_KEY }}
+        ${{ secrets.SERVERLESS_ORG_NAME }}
+        EOF
     - name: Install NPM dependencies
       run: npm install
     # Optional
