@@ -23,10 +23,6 @@ jobs:
         DIFY_APP_API_KEY=${{ secrets.DIFY_APP_API_KEY }}
         SERVERLESS_ORG_NAME=${{ secrets.SERVERLESS_ORG_NAME }}
         EOF
-    - name: Serverless AWS authentication
-      run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      env:
-        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
     - name: Install NPM dependencies
       run: npm install
     # Optional
