@@ -17,11 +17,11 @@ jobs:
     - name: Create env file
       run: |
         cat > .env << EOF
-        ${{ secrets.PROD_SLACK_APP_TOKEN }}
-        ${{ secrets.PROD_SLACK_BOT_TOKEN }}
-        ${{ secrets.PROD_SLACK_SIGNING_SECRET }}
-        ${{ secrets.DIFY_APP_API_KEY }}
-        ${{ secrets.SERVERLESS_ORG_NAME }}
+        PROD_SLACK_APP_TOKEN=${{ secrets.PROD_SLACK_APP_TOKEN }}
+        PROD_SLACK_BOT_TOKEN=${{ secrets.PROD_SLACK_BOT_TOKEN }}
+        PROD_SLACK_SIGNING_SECRET=${{ secrets.PROD_SLACK_SIGNING_SECRET }}
+        DIFY_APP_API_KEY=${{ secrets.DIFY_APP_API_KEY }}
+        SERVERLESS_ORG_NAME=${{ secrets.SERVERLESS_ORG_NAME }}
         EOF
     - name: Serverless AWS authentication
       run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
