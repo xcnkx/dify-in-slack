@@ -59,3 +59,8 @@ package:
 
 plugins:
   - serverless-python-requirements
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    layer: true
