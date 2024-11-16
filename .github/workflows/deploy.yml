@@ -7,6 +7,7 @@ on:
 jobs:
   deploy-prod:
     runs-on: ubuntu-latest
+    environment: deploy app agent
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
