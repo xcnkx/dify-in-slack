@@ -19,10 +19,6 @@ jobs:
       run: npm install -g serverless
     - name: Install Serverless Python Requirements Plugin
       run: sls plugin install -n serverless-python-requirements
-    - name: Install AWS CLI
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y awscli jq
     - name: Deploy Lambda functions
       id: deploy
       env:
@@ -37,36 +33,3 @@ jobs:
         SERVERLESS_ORG_NAME: ${{ secrets.SERVERLESS_ORG_NAME }}
       run: |
         sls deploy --stage prod --verbose
-    - name: Extract HttpApiUrl from CloudFormation
-      id: extract-http-api-url
-      env:
-        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
-      run: |
-        HttpApiUrl=$(aws cloudformation describe-stacks --stack-name aws-lambda-dify-slack-bolt-prod \
-          --query "Stacks[0].Outputs" --output json | jq -r '.[] | select(.OutputKey == "HttpApiUrl") | .OutputValue')
-        if [ -z "$HttpApiUrl" ]; then
-          echo "HttpApiUrl not found in CloudFormation Outputs." >&2
-          exit 1
-        fi
-        echo "API_ENDPOINT=$HttpApiUrl" >> $GITHUB_ENV
-    - name: Comment on PR with API URL
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const apiEndpoint = process.env.API_ENDPOINT;
-          const prNumber = context.payload.pull_request?.number;
-          if (!prNumber) {
-            console.log("No pull request found. Skipping comment.");
-            return;
-          }
-          const commentBody = `🚀 Deployment Successful! The API endpoint is:\n\n\`${apiEndpoint}\``;
-          await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: prNumber,
-            body: commentBody,
-          });
-      env:
-        API_ENDPOINT: ${{ env.API_ENDPOINT }}
