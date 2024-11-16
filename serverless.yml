@@ -18,6 +18,9 @@ provider:
             - lambda:InvokeAsync
           Resource: "*"
 
+  deploymentBucket:
+    name: ${self:service}-deployment-bucket
+
   environment:
     SLACK_BOT_TOKEN: ${env:PROD_SLACK_BOT_TOKEN}
     SLACK_SIGNING_SECRET: ${env:PROD_SLACK_SIGNING_SECRET}
