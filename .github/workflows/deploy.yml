@@ -19,15 +19,6 @@ jobs:
       run: npm install -g serverless
     - name: Install Serverless Python Requirements Plugin
       run: sls plugin install -n serverless-python-requirements
-    - name: Create env file
-      run: |
-        cat > .env << EOF
-        PROD_SLACK_APP_TOKEN=${{ secrets.PROD_SLACK_APP_TOKEN }}
-        PROD_SLACK_BOT_TOKEN=${{ secrets.PROD_SLACK_BOT_TOKEN }}
-        PROD_SLACK_SIGNING_SECRET=${{ secrets.PROD_SLACK_SIGNING_SECRET }}
-        DIFY_APP_API_KEY=${{ secrets.DIFY_APP_API_KEY }}
-        SERVERLESS_ORG_NAME=${{ secrets.SERVERLESS_ORG_NAME }}
-        EOF
     - name: Deploy Lambda functions
       id: deploy
       env:
@@ -35,7 +26,15 @@ jobs:
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
-      run: sls deploy --stage prod --verbose
+        PROD_SLACK_APP_TOKEN: ${{ secrets.PROD_SLACK_APP_TOKEN }}
+        PROD_SLACK_BOT_TOKEN: ${{ secrets.PROD_SLACK_BOT_TOKEN }}
+        PROD_SLACK_SIGNING_SECRET: ${{ secrets.PROD_SLACK_SIGNING_SECRET }}
+        DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
+        SERVERLESS_ORG_NAME: ${{ secrets.SERVERLESS_ORG_NAME }}
+      run: |
+        sls deploy --stage prod --verbose > deployment_output.txt
+    - name: Debug deployment output
+      run: cat deployment_output.txt
     - name: Extract API endpoint
       id: extract-endpoint
       run: |
