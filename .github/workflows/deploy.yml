@@ -23,11 +23,6 @@ jobs:
         DIFY_APP_API_KEY=${{ secrets.DIFY_APP_API_KEY }}
         SERVERLESS_ORG_NAME=${{ secrets.SERVERLESS_ORG_NAME }}
         EOF
-    - name: Install NPM dependencies
-      run: npm install
-    # Optional
-    #- name: Build assets
-    #  run: npm run assets-prod
     - name: Deploy Lambda functions
       run: sls deploy -s prod
       env:
