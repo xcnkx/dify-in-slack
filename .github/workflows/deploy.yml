@@ -15,6 +15,8 @@ jobs:
         node-version: '18'
     - name: Install Serverless Framework
       run: npm install -g serverless
+    - name: Install Serverless Python Requirements Plugin
+      run: sls plugin install -n serverless-python-requirements
     - name: Create env file
       run: |
         cat > .env << EOF
