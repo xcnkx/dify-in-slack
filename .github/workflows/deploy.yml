@@ -14,8 +14,6 @@ jobs:
         node-version: '18'
     - name: Install Serverless Framework
       run: npm install -g serverless
-    - name: Serverless AWS authentication
-      run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: Create env file
       run: |
         cat > .env << EOF
@@ -25,6 +23,8 @@ jobs:
         ${{ secrets.DIFY_APP_API_KEY }}
         ${{ secrets.SERVERLESS_ORG_NAME }}
         EOF
+    - name: Serverless AWS authentication
+      run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: Install NPM dependencies
       run: npm install
     # Optional
