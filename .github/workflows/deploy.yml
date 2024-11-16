@@ -32,13 +32,13 @@ jobs:
         DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
         SERVERLESS_ORG_NAME: ${{ secrets.SERVERLESS_ORG_NAME }}
       run: |
-        sls deploy --stage prod --verbose > deployment_output.txt
+        sls deploy --stage prod --verbose > ./deployment_output.txt
     - name: Debug deployment output
-      run: cat deployment_output.txt
+      run: cat ./deployment_output.txt
     - name: Extract API endpoint
       id: extract-endpoint
       run: |
-        ENDPOINT=$(grep -oP 'endpoint:\s+POST\s+-\s+\Khttps://[a-zA-Z0-9.-]*execute-api[a-zA-Z0-9.-]*\.amazonaws\.com/[a-zA-Z0-9.-]*' deployment_output.txt | head -n 1)
+        ENDPOINT=$(grep -oP 'HttpApiUrl:\s+\Khttps://[a-zA-Z0-9.-]+\.execute-api\.[a-zA-Z0-9.-]+\.amazonaws\.com' deployment_output.txt | head -n 1)
         if [ -z "$ENDPOINT" ]; then
           echo "No API endpoint found in deployment output." >&2
           exit 1
