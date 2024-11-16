@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 jobs:
   deploy-prod:
     runs-on: ubuntu-latest
@@ -19,15 +16,6 @@ jobs:
       run: npm install -g serverless
     - name: Install Serverless Python Requirements Plugin
       run: sls plugin install -n serverless-python-requirements
-    - name: Create env file
-      run: |
-        cat > .env << EOF
-        PROD_SLACK_APP_TOKEN=${{ secrets.PROD_SLACK_APP_TOKEN }}
-        PROD_SLACK_BOT_TOKEN=${{ secrets.PROD_SLACK_BOT_TOKEN }}
-        PROD_SLACK_SIGNING_SECRET=${{ secrets.PROD_SLACK_SIGNING_SECRET }}
-        DIFY_APP_API_KEY=${{ secrets.DIFY_APP_API_KEY }}
-        SERVERLESS_ORG_NAME=${{ secrets.SERVERLESS_ORG_NAME }}
-        EOF
     - name: Deploy Lambda functions
       id: deploy
       env:
@@ -35,32 +23,10 @@ jobs:
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
-      run: sls deploy --stage prod --verbose
-    - name: Extract API endpoint
-      id: extract-endpoint
+        PROD_SLACK_APP_TOKEN: ${{ secrets.PROD_SLACK_APP_TOKEN }}
+        PROD_SLACK_BOT_TOKEN: ${{ secrets.PROD_SLACK_BOT_TOKEN }}
+        PROD_SLACK_SIGNING_SECRET: ${{ secrets.PROD_SLACK_SIGNING_SECRET }}
+        DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
+        SERVERLESS_ORG_NAME: ${{ secrets.SERVERLESS_ORG_NAME }}
       run: |
-        ENDPOINT=$(grep -oP 'endpoint:\s+POST\s+-\s+\Khttps://[a-zA-Z0-9.-]*execute-api[a-zA-Z0-9.-]*\.amazonaws\.com/[a-zA-Z0-9.-]*' deployment_output.txt | head -n 1)
-        if [ -z "$ENDPOINT" ]; then
-          echo "No API endpoint found in deployment output." >&2
-          exit 1
-        fi
-        echo "API_ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
-    - name: Comment on PR
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const endpoint = process.env.API_ENDPOINT;
-          const prNumber = context.payload.pull_request?.number;
-          if (!prNumber) {
-            console.log("No pull request found. Skipping comment.");
-            return;
-          }
-          const commentBody = `🚀 Deployment Successful! The API endpoint is:\n\n\`${endpoint}\``;
-          await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: prNumber,
-            body: commentBody,
-          });
-      env:
-        API_ENDPOINT: ${{ env.API_ENDPOINT }}
+        sls deploy --stage prod --verbose
