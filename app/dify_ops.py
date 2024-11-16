@@ -1,6 +1,7 @@
 import json
 from typing import Optional
 
+import requests
 from dify_client import ChatClient
 from requests import Response
 from sseclient import SSEClient
@@ -74,3 +75,38 @@ def get_answer_from_streaming_response(response: Response) -> str:
             break
 
     return answer
+
+
+# 画像のアップロード
+def upload_file_to_dify(
+    file_path: str, api_key: str, user_id: str, mime_type: str = "image/jpeg"
+) -> dict:
+    """
+    Difyの/files/uploadエンドポイントを使ってファイルをアップロードする関数
+
+    Args:
+        file_path (str): アップロードするローカルファイルのパス
+        api_key (str): DifyのAPIキー
+        user_id (str): ユーザーID
+        mime_type (str): ファイルのMIMEタイプ（デフォルト: image/jpeg）
+
+    Returns:
+        dict: アップロードのレスポンスデータ
+    """
+    url = "https://api.dify.ai/v1/files/upload"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+    }
+    with open(file_path, "rb") as file_data:
+        files = {
+            "file": (file_path, file_data, mime_type)  # MIMEタイプを指定
+        }
+        data = {"user": user_id}
+        response = requests.post(url, headers=headers, files=files, data=data)
+
+    if response.status_code != 201:
+        raise Exception(
+            f"Failed to upload file: {response.status_code}, {response.text}"
+        )
+
+    return response.json()

@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 import requests
@@ -129,7 +130,9 @@ def can_send_image_url_to_openai(context: BoltContext) -> bool:
     return can_send_image_url
 
 
-def download_slack_image_content(image_url: str, bot_token: str) -> bytes:
+def download_slack_image_content(
+    image_url: str, image_name: str, bot_token: str
+) -> str:
     response = requests.get(
         image_url,
         headers={"Authorization": f"Bearer {bot_token}"},
@@ -147,4 +150,8 @@ def download_slack_image_content(image_url: str, bot_token: str) -> bytes:
         error = f"The responded content-type is not for image data: {content_type}"
         raise SlackApiError(error, response)
 
-    return response.content
+    temp_path = f"/tmp/{uuid.uuid4()}-{image_name}"
+    with open(temp_path, "wb") as f:
+        f.write(response.content)
+
+    return temp_path

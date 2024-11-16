@@ -10,10 +10,12 @@ from app.dify_ops import (
     format_dify_message_content,
     get_answer_from_streaming_response,
     get_last_conversation_id,
+    upload_file_to_dify,
 )
 from app.env import TRANSLATE_MARKDOWN
 from app.markdown_conversion import slack_to_markdown
 from app.slack_ops import (
+    download_slack_image_content,
     find_parent_message,
     is_this_app_mentioned,
     post_wip_message,
@@ -62,6 +64,7 @@ def respond_to_app_mention(
         dify_client = ChatClient(context["DIFY_APP_API_KEY"])
         user_message = get_user_message(payload, context.bot_user_id)
         user_message = format_dify_message_content(user_message, TRANSLATE_MARKDOWN)
+        files = payload.get("files", [])
 
         if thread_ts:
             latest_conversation_id = get_last_conversation_id(dify_client, thread_ts)
@@ -100,11 +103,16 @@ def respond_to_app_mention(
             wip_reply = post_wip_message(
                 client=client, channel=context.channel_id, thread_ts=payload.get("ts")
             )
+
+            files_paths = save_image_content(files, context)
+            files_content = create_files_content(files_paths, context)
+
             response = dify_client.create_chat_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
                 user=payload.get("ts").replace(".", "-"),
                 response_mode="streaming",
+                files=files_content,
             )
 
         response.raise_for_status()
@@ -133,6 +141,7 @@ def respond_to_new_message(
         thread_ts = payload.get("thread_ts")
         dify_client = ChatClient(context["DIFY_APP_API_KEY"])
         user_id = context.actor_user_id or context.user_id
+        files = payload.get("files", [])
 
         if not is_in_dm_with_bot and not thread_ts:
             return
@@ -143,11 +152,16 @@ def respond_to_new_message(
             wip_reply = post_wip_message(
                 client=client, channel=context.channel_id, thread_ts=payload.get("ts")
             )
+
+            files_paths = save_image_content(files, context)
+            files_content = create_files_content(files_paths, context)
+
             response = dify_client.create_chat_message(
                 inputs={"slack_user_id": user_id},
                 query=user_message,
                 user=payload.get("ts").replace(".", "-"),
                 response_mode="streaming",
+                files=files_content,
             )
         else:
             messages_in_context = client.conversations_replies(
@@ -171,6 +185,9 @@ def respond_to_new_message(
             latest_conversation_id = get_last_conversation_id(dify_client, thread_ts)
             user_message = format_dify_message_content(user_message, TRANSLATE_MARKDOWN)
 
+            files_paths = save_image_content(files, context)
+            files_content = create_files_content(files_paths, context)
+
             if latest_conversation_id:
                 response = dify_client.create_chat_message(
                     inputs={"slack_user_id": user_id},
@@ -178,6 +195,7 @@ def respond_to_new_message(
                     conversation_id=latest_conversation_id,
                     user=thread_ts.replace(".", "-"),
                     response_mode="streaming",
+                    files=files_content,
                 )
             else:
                 response = dify_client.create_chat_message(
@@ -185,6 +203,7 @@ def respond_to_new_message(
                     query=user_message,
                     user=thread_ts.replace(".", "-"),
                     response_mode="streaming",
+                    files=files_content,
                 )
 
         response.raise_for_status()
@@ -227,3 +246,43 @@ def before_authorize(
         )
         return BoltResponse(status=200, body="")
     next_()
+
+
+def save_image_content(files: list, context: BoltContext) -> dict:
+    file_paths = {}
+
+    if len(files) == 0:
+        return file_paths
+
+    for file in files:
+        mime_type = file.get("mimetype", "")
+        if mime_type.startswith("image/"):
+            image_url = file["url_private"]
+            file_name = file.get("name", "image.jpg")
+            local_image_path = download_slack_image_content(
+                image_url, file_name, context.bot_token
+            )
+            file_paths[file_name] = local_image_path
+
+    return file_paths
+
+
+def create_files_content(files: dict, context: BoltContext) -> list:
+    files_content = []
+    if len(files) == 0:
+        return files_content
+
+    for _, file_path in files.items():
+        response = upload_file_to_dify(
+            file_path, context["DIFY_APP_API_KEY"], context.user_id
+        )
+
+        files_content.append(
+            {
+                "type": "image",
+                "transfer_method": "local_file",
+                "upload_file_id": response["id"],
+            }
+        )
+
+    return files_content
