@@ -64,9 +64,6 @@ def respond_to_app_mention(
         user_message = format_dify_message_content(user_message, TRANSLATE_MARKDOWN)
 
         if thread_ts:
-            wip_reply = post_wip_message(
-                client=client, channel=context.channel_id, thread_ts=thread_ts
-            )
             latest_conversation_id = get_last_conversation_id(dify_client, thread_ts)
             messages_history = client.conversations_replies(
                 channel=context.channel_id,
@@ -74,6 +71,10 @@ def respond_to_app_mention(
                 include_all_metadata=True,
                 limit=1000,
             ).get("messages", [])
+
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=thread_ts
+            )
 
             if latest_conversation_id:
                 response = dify_client.create_chat_message(
@@ -85,7 +86,8 @@ def respond_to_app_mention(
                 )
             else:
                 messages_fmt = "\n".join(
-                    slack_to_markdown(msg["text"]) for msg in messages_history
+                    f"<@{msg['user'] if 'user' in msg else msg['username']}>: {slack_to_markdown(msg['text'])}"
+                    for msg in messages_history
                 )
                 query = f"{messages_fmt}\n{user_message}"
                 response = dify_client.create_chat_message(
@@ -148,9 +150,6 @@ def respond_to_new_message(
                 response_mode="streaming",
             )
         else:
-            wip_reply = post_wip_message(
-                client=client, channel=context.channel_id, thread_ts=thread_ts
-            )
             messages_in_context = client.conversations_replies(
                 channel=context.channel_id,
                 ts=thread_ts,
@@ -166,6 +165,9 @@ def respond_to_new_message(
             if not is_thread_for_this_app:
                 return
 
+            wip_reply = post_wip_message(
+                client=client, channel=context.channel_id, thread_ts=thread_ts
+            )
             latest_conversation_id = get_last_conversation_id(dify_client, thread_ts)
             user_message = format_dify_message_content(user_message, TRANSLATE_MARKDOWN)
 
